@@ -59,7 +59,7 @@ UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 extern void MX_USART1_UART_Init(void);
-static void MX_LPUART1_UART_Init(void);
+extern void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -159,7 +159,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
-
+#if 0
 /**
   * @brief LPUART1 Initialization Function
   * @param None
@@ -206,7 +206,7 @@ static void MX_LPUART1_UART_Init(void)
   /* USER CODE END LPUART1_Init 2 */
 
 }
-
+#endif
 /**
   * @brief USART1 Initialization Function
   * @param None
