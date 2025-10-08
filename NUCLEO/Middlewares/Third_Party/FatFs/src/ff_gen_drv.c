@@ -21,7 +21,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-Disk_drvTypeDef disk = {{0},{0},{0},0};
+//Disk_drvTypeDef disk = {{0},{0},{0},0};
+Disk_drvTypeDef disk = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -67,7 +68,21 @@ uint8_t FATFS_LinkDriverEx(const Diskio_drvTypeDef *drv, char *path, uint8_t lun
   */
 uint8_t FATFS_LinkDriver(const Diskio_drvTypeDef *drv, char *path)
 {
-  return FATFS_LinkDriverEx(drv, path, 0);
+  //return FATFS_LinkDriverEx(drv, path, 0);
+	 uint8_t drv_num = disk.nbr;
+	    if (drv_num >= _VOLUMES)
+	        return 1;
+
+	    disk.is_initialized[drv_num] = 0;
+	    disk.drv[drv_num] = (Diskio_drvTypeDef *)drv;
+	    disk.nbr++;
+
+	    path[0] = drv_num + '0';
+	    path[1] = ':';
+	    path[2] = '/';
+	    path[3] = 0;
+
+	    return 0;
 }
 
 /**

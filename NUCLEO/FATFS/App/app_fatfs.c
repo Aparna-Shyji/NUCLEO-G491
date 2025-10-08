@@ -22,6 +22,7 @@
 #include "main.h"
 #include "ff_gen_drv.h"
 #include "user_diskio.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -84,9 +85,36 @@ int32_t MX_FATFS_Init(void)
     Appli_state = APPLICATION_INIT;
     return APP_OK;
   }*/
-	retUSER = FATFS_LinkDriver(&USER_Driver, USERPath);
+	//retUSER = FATFS_LinkDriver(&USER_Driver, USERPath);
 
-	  return APP_OK;
+	 // return APP_OK;
+	UART_Print("Trying to link driver...\r\n");
+
+	    // Attempt to link the flash driver
+	    retUSER = FATFS_LinkDriver(&USER_Driver, USERPath);
+
+	    if (retUSER == 0)
+	    {
+	        UART_Print("Driver link success\r\n");
+
+	        // Optional: print address of USER_Driver for debug
+	        char debugBuf[50];
+	        sprintf(debugBuf, "USER_Driver addr: %p\r\n", &USER_Driver);
+	        UART_Print(debugBuf);
+
+	        return APP_OK;
+	    }
+	    else
+	    {
+	        UART_Print("Driver link failed\r\n");
+
+	        // Print the address anyway to help diagnose
+	        char debugBuf[50];
+	        sprintf(debugBuf, "USER_Driver addr: %p\r\n", &USER_Driver);
+	        UART_Print(debugBuf);
+
+	        return APP_ERROR;
+	    }
   /* USER CODE END FATFS_Init */
 }
 

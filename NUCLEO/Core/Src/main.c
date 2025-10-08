@@ -24,6 +24,8 @@
 #include "user_diskio.h"
 #include "ff_gen_drv.h"
 #include "user_diskio.h"
+#include "ff.h"
+#include "ffconf.h"
 
 
 
@@ -44,7 +46,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -60,6 +61,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 extern void MX_USART1_UART_Init(void);
 extern void MX_LPUART1_UART_Init(void);
+static void MX_USART1_UART_Init(void);
+void test_fatfs(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -270,7 +273,6 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -278,6 +280,8 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+#define FLASH_DISK_SIZE  (64 * 1024)
+uint8_t flash_disk[FLASH_DISK_SIZE];
 
 void UART_Print(char *msg)
 {
@@ -291,27 +295,39 @@ void test_fatfs(void)
     FRESULT res;
     UINT bw;
     char buffer[100];
-    char USERPath[4];
+    char USERPath[4] = "0:"; // Mount path
+    BYTE work[FF_MAX_SS];
 
-    extern Diskio_drvTypeDef USER_Driver;
-    //FATFS_LinkDriver(&USER_Driver, USERPath);
-    if (FATFS_LinkDriver(&USER_Driver, USERPath) != 0)
-        {
-            UART_Print("Link driver failed\r\n");
-            return;
-        }
-    // Mount SD card
-    res = f_mount(&fs, "USERPath", 1);
-    if (res != FR_OK) {
-        UART_Print("Mount failed\r\n");
-       // return;
+    UART_Print("Formatting disk...\r\n");
+       res = f_mkfs(USERPath, FM_FAT | FM_SFD, 0, work, sizeof(work));
+       if (res != FR_OK) {
+           char msg[40];
+           sprintf(msg, "Formatting disk failed (%d)\r\n", res);
+           UART_Print(msg);
+           return;
+       }
+       UART_Print("Disk formatted successfully\r\n");
+
+   /* BYTE work[FF_MAX_SS];
+    res = f_mkfs(USERPath, FM_ANY, 512, work, sizeof(work));
+    if(res != FR_OK) {
+        UART_Print("Formatting disk failed\r\n");
+        return;
     }
-    UART_Print("Mount successful\r\n");
+    UART_Print("Disk formatted successfully\r\n");*/
 
-    // Create and write a file
-    res = f_open(&fil, "test.txt", FA_CREATE_ALWAYS | FA_WRITE);
-    if (res == FR_OK) {
-        char *data = "Hello from STM32G474 FATFS!\r\n";
+    // Mount the filesystem
+       res = f_mount(&fs, USERPath, 1);
+          if (res != FR_OK) {
+              UART_Print("Mount failed\r\n");
+              return;
+          }
+          UART_Print("Mount successful\r\n");
+
+    // Write file
+    res = f_open(&fil, "0:test.txt", FA_CREATE_ALWAYS | FA_WRITE);
+    if(res == FR_OK) {
+        char *data = "Hello from STM32 FATFS!\r\n";
         f_write(&fil, data, strlen(data), &bw);
         f_close(&fil);
         UART_Print("File written successfully\r\n");
@@ -320,12 +336,11 @@ void test_fatfs(void)
     }
 
     // Read file back
-    res = f_open(&fil, "test.txt", FA_READ);
-    if (res == FR_OK) {
+    res = f_open(&fil, "0:test.txt", FA_READ);
+    if(res == FR_OK) {
         f_read(&fil, buffer, sizeof(buffer)-1, &bw);
-        buffer[bw] = '\0'; // Null-terminate
+        buffer[bw] = '\0';
         f_close(&fil);
-
         UART_Print("Read: ");
         UART_Print(buffer);
     } else {

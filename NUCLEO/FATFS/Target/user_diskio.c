@@ -39,10 +39,15 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define FLASH_DISK_SIZE (64 * 1024)  // 64KB fake storage
+static uint8_t flash_disk[FLASH_DISK_SIZE];
+
 #define FLASH_FS_START_ADDR   0x08070000U   // Start of Flash region reserved for filesystem
 #define FLASH_FS_SIZE         (64 * 1024U)  // 64 KB total
 #define FLASH_SECTOR_SIZE     (4096U)       // Sector size (erase granularity)
 #define SECTOR_COUNT          (FLASH_FS_SIZE / FLASH_SECTOR_SIZE)
+
+
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
@@ -87,7 +92,7 @@ Diskio_drvTypeDef  USER_Driver =
   */
 DSTATUS USER_initialize(BYTE pdrv)
 {
-    HAL_FLASH_Unlock();
+    memset(flash_disk, 0xFF, FLASH_DISK_SIZE);
     Stat = 0;
     UART_Print("FlashDisk: Init OK\r\n");
     return Stat;
@@ -97,14 +102,9 @@ DSTATUS USER_initialize(BYTE pdrv)
   * @param  pdrv: Physical drive number (0..)
   * @retval DSTATUS: Operation status
   */
-DSTATUS USER_status (
-	BYTE pdrv       /* Physical drive number to identify the drive */
-)
+DSTATUS USER_status(BYTE pdrv)
 {
-  /* USER CODE BEGIN STATUS */
-   // Stat = STA_NOINIT;
     return Stat;
-  /* USER CODE END STATUS */
 }
 
 /**
@@ -115,7 +115,7 @@ DSTATUS USER_status (
   * @param  count: Number of sectors to read (1..128)
   * @retval DRESULT: Operation result
   */
-DRESULT USER_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
+/*DRESULT USER_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
     if (sector >= SECTOR_COUNT)
         return RES_PARERR;
@@ -123,6 +123,18 @@ DRESULT USER_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
     uint32_t addr = FLASH_FS_START_ADDR + (sector * FLASH_SECTOR_SIZE);
     memcpy(buff, (uint8_t*)addr, count * FLASH_SECTOR_SIZE);
 
+    return RES_OK;
+}*/
+DRESULT USER_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
+{
+	//UART_Print("USER_read called\r\n");
+    UINT offset = sector * 512; // sector size is 512 bytes
+    UINT bytes = count * 512;
+
+    if ((offset + bytes) > FLASH_DISK_SIZE)
+        return RES_PARERR;
+
+    memcpy(buff, &flash_disk[offset], bytes);
     return RES_OK;
 }
 
@@ -134,8 +146,8 @@ DRESULT USER_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
   * @param  count: Number of sectors to write (1..128)
   * @retval DRESULT: Operation result
   */
-#if _USE_WRITE == 1
-DRESULT USER_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
+//#if _USE_WRITE == 1
+/*DRESULT USER_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
     if (sector >= SECTOR_COUNT)
         return RES_PARERR;
@@ -166,8 +178,20 @@ DRESULT USER_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
     }
 
     return RES_OK;
+}*/
+DRESULT USER_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
+{
+	//UART_Print("USER_write called\r\n");
+    UINT offset = sector * 512;
+    UINT bytes = count * 512;
+
+    if ((offset + bytes) > FLASH_DISK_SIZE)
+        return RES_PARERR;
+
+    memcpy(&flash_disk[offset], buff, bytes);
+    return RES_OK;
 }
-#endif /* _USE_WRITE == 1 */
+//#endif /* _USE_WRITE == 1 */
 
 /**
   * @brief  I/O control operation
@@ -177,7 +201,7 @@ DRESULT USER_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
   * @retval DRESULT: Operation result
   */
 #if _USE_IOCTL == 1
-DRESULT USER_ioctl(BYTE pdrv, BYTE cmd, void *buff)
+/*DRESULT USER_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 {
     DRESULT res = RES_OK;
 
@@ -208,5 +232,29 @@ DRESULT USER_ioctl(BYTE pdrv, BYTE cmd, void *buff)
     }
 
     return res;
+}*/
+DRESULT USER_ioctl(BYTE pdrv, BYTE cmd, void *buff)
+{
+    switch (cmd)
+    {
+        case CTRL_SYNC:
+            return RES_OK;
+
+        case GET_SECTOR_COUNT:
+            *(DWORD*)buff = FLASH_DISK_SIZE / 512;
+            return RES_OK;
+
+        case GET_SECTOR_SIZE:
+            *(WORD*)buff = 512;
+            return RES_OK;
+
+        case GET_BLOCK_SIZE:
+            *(DWORD*)buff = 1;
+            return RES_OK;
+
+        default:
+            return RES_PARERR;
+
+    }
 }
 #endif /* _USE_IOCTL == 1 */

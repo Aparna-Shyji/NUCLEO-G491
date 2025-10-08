@@ -30,6 +30,10 @@
 /-----------------------------------------------------------------------------*/
 
 #define _FS_READONLY         0      /* 0:Read/Write or 1:Read only */
+#define _USE_WRITE    1   /* 0: Disable or 1: Enable writing API functions */
+#define _USE_IOCTL    1
+
+
 /* This option switches read-only configuration. (0:Read/Write or 1:Read-only)
 /  Read-only configuration removes writing API functions, f_write(), f_sync(),
 /  f_unlink(), f_mkdir(), f_chmod(), f_rename(), f_truncate(), f_getfree()
@@ -154,6 +158,7 @@
 /----------------------------------------------------------------------------*/
 
 #define _VOLUMES    1
+
 /* Number of volumes (logical drives) to be used. */
 
 /* USER CODE BEGIN Volumes */
@@ -175,6 +180,10 @@
 /  function will be available. */
 #define _MIN_SS    512  /* 512, 1024, 2048 or 4096 */
 #define _MAX_SS    512  /* 512, 1024, 2048 or 4096 */
+#define FF_MAX_SS 512   // Maximum sector size
+
+
+
 /* These options configure the range of sector size to be supported. (512, 1024,
 /  2048 or 4096) Always set both 512 for most systems, all type of memory cards and
 /  harddisk. But a larger value may be required for on-board flash memory and some
