@@ -1,0 +1,6 @@
+../FATFS/Target/user_diskio.c:51:13:UART_Print	1
+../FATFS/Target/user_diskio.c:88:9:USER_initialize	1
+../FATFS/Target/user_diskio.c:100:9:USER_status	1
+../FATFS/Target/user_diskio.c:118:9:USER_read	2
+../FATFS/Target/user_diskio.c:138:9:USER_write	5
+../FATFS/Target/user_diskio.c:180:9:USER_ioctl	5
