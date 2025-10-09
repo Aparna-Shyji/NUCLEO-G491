@@ -40,10 +40,13 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
+//I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef hlpuart1;
+UART_HandleTypeDef huart1;
+
+SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
 
@@ -54,13 +57,15 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 extern void MX_USART1_UART_Init(void);
 extern void MX_LPUART1_UART_Init(void);
-static void MX_I2C1_Init(void);
+//static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#if 0
 void I2C_Scan(void)
 {
     printf("Scanning I2C bus...\r\n");
@@ -72,7 +77,7 @@ void I2C_Scan(void)
         }
     }
 }
-
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -111,18 +116,21 @@ int main(void)
   /*if (MX_FATFS_Init() != APP_OK) {
     Error_Handler();
   }*/
-  MX_I2C1_Init();
-  init_i2c_device();
-  I2C_Scan();
+//  MX_I2C1_Init();
+//  init_i2c_device();
+//  I2C_Scan();
 
-  uint8_t tx_data = 0xAA;  // example data to write
-  uint8_t rx_data = 0x00;
-
-  UART_Print("Writing 0x%02X to I2C slave 0x50 register 0x01...\r\n", tx_data);
-  write_i2c_device(0, 0x98, 0x01, &tx_data, 1);
-  HAL_Delay(10);
-  read_i2c_device(0, 0x98, 0x01, &rx_data, 1);
-  UART_Print("Read value from I2C slave 0x50 register 0x01: 0x%02X\r\n", rx_data);
+//  uint8_t tx_data = 0xAA;  // example data to write
+//  uint8_t rx_data = 0x00;
+//
+//  UART_Print("Writing 0x%02X to I2C slave 0x50 register 0x01...\r\n", tx_data);
+//  write_i2c_device(0, 0x98, 0x01, &tx_data, 1);
+//  HAL_Delay(10);
+//  read_i2c_device(0, 0x98, 0x01, &rx_data, 1);
+//  UART_Print("Read value from I2C slave 0x50 register 0x01: 0x%02X\r\n", rx_data);
+//  }
+//  MX_LPUART1_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -184,7 +192,7 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
-
+# if 0
 static void MX_I2C1_Init(void)
 {
 
@@ -228,7 +236,7 @@ static void MX_I2C1_Init(void)
 
 }
 
-
+#endif
 /**
   * @brief USART1 Initialization Function
   * @param None
@@ -280,6 +288,46 @@ static void MX_USART1_UART_Init(void)
 #endif
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 7;
+  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -291,6 +339,7 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
