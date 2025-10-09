@@ -1,0 +1,8 @@
+../Core/Src/uart.c:62:6:send_to_gps_and_debug	2
+../Core/Src/uart.c:74:6:send_all_gps_sentences	2
+../Core/Src/uart.c:89:6:UART_Printf	3
+../Core/Src/uart.c:121:5:ais140_parse_commands	11
+../Core/Src/uart.c:185:6:ais140_process_received_data	4
+../Core/Src/uart.c:228:6:HAL_UART_RxCpltCallback	8
+../Core/Src/uart.c:308:6:MX_USART1_UART_Init	5
+../Core/Src/uart.c:364:6:MX_LPUART1_UART_Init	6
