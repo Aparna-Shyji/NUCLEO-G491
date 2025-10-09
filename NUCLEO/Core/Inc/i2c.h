@@ -19,6 +19,10 @@ extern "C" {
 #define MAX_I2C_WRITE_DATA_BYTES  64
 
 void init_i2c_device(void);
+int write_i2c_device(int channel_num, int slave_addr, uint8_t reg,
+                            uint8_t *write_buffer, int size);
+int read_i2c_device(int channel_num, int slave_addr, uint8_t reg,
+                           uint8_t *read_buffer, int size);
 
 
 #ifdef __cplusplus
