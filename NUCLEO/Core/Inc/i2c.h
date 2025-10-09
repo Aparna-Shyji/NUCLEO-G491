@@ -25,6 +25,7 @@ int read_i2c_device(int channel_num, int slave_addr, uint8_t reg,
                            uint8_t *read_buffer, int size);
 
 
+
 #ifdef __cplusplus
 }
 #endif

@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_fatfs.h"
-#include "stm32g4xx_hal_i2c.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -61,6 +61,17 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void I2C_Scan(void)
+{
+    printf("Scanning I2C bus...\r\n");
+    for (uint8_t addr = 1; addr < 128; addr++)
+    {
+        if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 2, 10) == HAL_OK)
+        {
+            printf("Device found at 0x%02X\r\n", addr);
+        }
+    }
+}
 
 /* USER CODE END 0 */
 
@@ -102,6 +113,16 @@ int main(void)
   }*/
   MX_I2C1_Init();
   init_i2c_device();
+  I2C_Scan();
+
+  uint8_t tx_data = 0xAA;  // example data to write
+  uint8_t rx_data = 0x00;
+
+  UART_Print("Writing 0x%02X to I2C slave 0x50 register 0x01...\r\n", tx_data);
+  write_i2c_device(0, 0x98, 0x01, &tx_data, 1);
+  HAL_Delay(10);
+  read_i2c_device(0, 0x98, 0x01, &rx_data, 1);
+  UART_Print("Read value from I2C slave 0x50 register 0x01: 0x%02X\r\n", rx_data);
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -112,6 +133,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
+	  HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -162,6 +184,7 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
+
 static void MX_I2C1_Init(void)
 {
 
@@ -204,6 +227,7 @@ static void MX_I2C1_Init(void)
   /* USER CODE END I2C1_Init 2 */
 
 }
+
 
 /**
   * @brief USART1 Initialization Function
@@ -254,6 +278,7 @@ static void MX_USART1_UART_Init(void)
 
 }
 #endif
+
 /**
   * @brief GPIO Initialization Function
   * @param None
