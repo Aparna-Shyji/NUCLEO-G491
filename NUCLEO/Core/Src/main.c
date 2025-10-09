@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_fatfs.h"
-
+#include "stm32g4xx_hal_i2c.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -43,6 +43,7 @@
 I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef hlpuart1;
 
 /* USER CODE BEGIN PV */
 
@@ -51,7 +52,8 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
+extern void MX_USART1_UART_Init(void);
+extern void MX_LPUART1_UART_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -93,6 +95,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_FATFS_Init();
+  MX_LPUART1_UART_Init();
   test_fatfs();
   /*if (MX_FATFS_Init() != APP_OK) {
     Error_Handler();
@@ -207,6 +210,7 @@ static void MX_I2C1_Init(void)
   * @param None
   * @retval None
   */
+#if 0
 static void MX_USART1_UART_Init(void)
 {
 
@@ -249,7 +253,7 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE END USART1_Init 2 */
 
 }
-
+#endif
 /**
   * @brief GPIO Initialization Function
   * @param None
