@@ -59,9 +59,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 extern void MX_USART1_UART_Init(void);
 extern void MX_LPUART1_UART_Init(void);
-static void MX_SPI1_Init(void);
+extern void MX_SPI1_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_USART2_UART_Init(void);
+extern void MX_USART2_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -118,6 +118,7 @@ int main(void)
   }
   MX_LPUART1_UART_Init();
   MX_SPI1_Init();
+  flash_driver_self_test();// spi tester function it must be removed later
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   MX_USB_PCD_Init();
@@ -340,7 +341,7 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE END USART1_Init 2 */
 
 }
-#endif
+
 /**
   * @brief USART2 Initialization Function
   * @param None
@@ -388,7 +389,8 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE END USART2_Init 2 */
 
 }
-
+#endif
+#if 0
 /**
   * @brief SPI1 Initialization Function
   * @param None
@@ -428,7 +430,7 @@ static void MX_SPI1_Init(void)
   /* USER CODE END SPI1_Init 2 */
 
 }
-
+#endif
 /**
   * @brief USB Initialization Function
   * @param None
