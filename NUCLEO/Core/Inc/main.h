@@ -57,6 +57,34 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define MAIN_PWR_ADC_Pin GPIO_PIN_0
+#define MAIN_PWR_ADC_GPIO_Port GPIOC
+#define BAT_PWR_ADC_Pin GPIO_PIN_1
+#define BAT_PWR_ADC_GPIO_Port GPIOC
+#define MCU_GSM_EN_Pin GPIO_PIN_2
+#define MCU_GSM_EN_GPIO_Port GPIOC
+#define MCU_CTS_Pin GPIO_PIN_0
+#define MCU_CTS_GPIO_Port GPIOA
+#define MCU_RTS_Pin GPIO_PIN_1
+#define MCU_RTS_GPIO_Port GPIOA
+#define MCU_TX_Pin GPIO_PIN_2
+#define MCU_TX_GPIO_Port GPIOA
+#define MCU_RX_Pin GPIO_PIN_3
+#define MCU_RX_GPIO_Port GPIOA
+#define BAT_EN_Pin GPIO_PIN_13
+#define BAT_EN_GPIO_Port GPIOB
+#define STATUS_Pin GPIO_PIN_14
+#define STATUS_GPIO_Port GPIOB
+#define WIFI_HTPT_LED_Pin GPIO_PIN_15
+#define WIFI_HTPT_LED_GPIO_Port GPIOB
+#define OBD_LED_Pin GPIO_PIN_6
+#define OBD_LED_GPIO_Port GPIOC
+#define GPS_EN_Pin GPIO_PIN_7
+#define GPS_EN_GPIO_Port GPIOC
+#define GPRS_LED_Pin GPIO_PIN_8
+#define GPRS_LED_GPIO_Port GPIOA
+#define GPS_LED_Pin GPIO_PIN_10
+#define GPS_LED_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
