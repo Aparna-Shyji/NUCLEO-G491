@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "app_fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -40,7 +41,10 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
 ADC_HandleTypeDef hadc1;
+
+FDCAN_HandleTypeDef hfdcan1;
 
 UART_HandleTypeDef hlpuart1;
 UART_HandleTypeDef huart1;
@@ -50,6 +54,12 @@ SPI_HandleTypeDef hspi1;
 
 PCD_HandleTypeDef hpcd_USB_FS;
 
+osThreadId vts_task_mainHandle;
+osThreadId vts_task_platfoHandle;
+osThreadId vts_task_gpsHandle;
+osThreadId vts_task_gprsHandle;
+osThreadId vts_task_cloudHandle;
+osThreadId myTask06Handle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -63,6 +73,15 @@ extern void MX_SPI1_Init(void);
 static void MX_ADC1_Init(void);
 extern void MX_USART2_UART_Init(void);
 static void MX_USB_PCD_Init(void);
+static void MX_FDCAN1_Init(void);
+static void MX_I2C1_Init(void);
+void itracer_main_thread(void const * argument);
+void itracer_platform_thread(void const * argument);
+void itracer_gps_thread(void const * argument);
+void itracer_gprs_thread(void const * argument);
+void itracer_cloud_thread(void const * argument);
+void itracer_adc_thread(void const * argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -116,15 +135,79 @@ int main(void)
   if (MX_FATFS_Init() != APP_OK) {
     Error_Handler();
   }
+
+    MX_I2C1_Init();
+  init_i2c_device();
+  I2C_Scan();
+
+ /* uint8_t tx_data = 0xAA;  // example data to write
+  uint8_t rx_data = 0x00;
+
+  UART_Print("Writing 0x%02X to I2C slave 0x50 register 0x01...\r\n", tx_data);
+  write_i2c_device(0, 0x98, 0x01, &tx_data, 1);
+  HAL_Delay(10);
+  read_i2c_device(0, 0x98, 0x01, &rx_data, 1);
+  UART_Print("Read value from I2C slave 0x50 register 0x01: 0x%02X\r\n", rx_data);*/
   MX_LPUART1_UART_Init();
   MX_SPI1_Init();
-  flash_driver_self_test();// spi tester function it must be removed later
+  flash_driver_self_test();
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   MX_USB_PCD_Init();
+  MX_FDCAN1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of vts_task_main */
+  osThreadDef(vts_task_main, itracer_main_thread, osPriorityAboveNormal, 0, 128);
+  vts_task_mainHandle = osThreadCreate(osThread(vts_task_main), NULL);
+
+  /* definition and creation of vts_task_platfo */
+  osThreadDef(vts_task_platfo, itracer_platform_thread, osPriorityRealtime, 0, 128);
+  vts_task_platfoHandle = osThreadCreate(osThread(vts_task_platfo), NULL);
+
+  /* definition and creation of vts_task_gps */
+  osThreadDef(vts_task_gps, itracer_gps_thread, osPriorityAboveNormal, 0, 128);
+  vts_task_gpsHandle = osThreadCreate(osThread(vts_task_gps), NULL);
+
+  /* definition and creation of vts_task_gprs */
+  osThreadDef(vts_task_gprs, itracer_gprs_thread, osPriorityAboveNormal, 0, 128);
+  vts_task_gprsHandle = osThreadCreate(osThread(vts_task_gprs), NULL);
+
+  /* definition and creation of vts_task_cloud */
+  osThreadDef(vts_task_cloud, itracer_cloud_thread, osPriorityRealtime, 0, 128);
+  vts_task_cloudHandle = osThreadCreate(osThread(vts_task_cloud), NULL);
+
+  /* definition and creation of myTask06 */
+  osThreadDef(myTask06, itracer_adc_thread, osPriorityNormal, 0, 128);
+  myTask06Handle = osThreadCreate(osThread(myTask06), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -243,6 +326,91 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief FDCAN1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_FDCAN1_Init(void)
+{
+
+  /* USER CODE BEGIN FDCAN1_Init 0 */
+
+  /* USER CODE END FDCAN1_Init 0 */
+
+  /* USER CODE BEGIN FDCAN1_Init 1 */
+
+  /* USER CODE END FDCAN1_Init 1 */
+  hfdcan1.Instance = FDCAN1;
+  hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
+  hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
+  hfdcan1.Init.AutoRetransmission = DISABLE;
+  hfdcan1.Init.TransmitPause = DISABLE;
+  hfdcan1.Init.ProtocolException = DISABLE;
+  hfdcan1.Init.NominalPrescaler = 16;
+  hfdcan1.Init.NominalSyncJumpWidth = 1;
+  hfdcan1.Init.NominalTimeSeg1 = 1;
+  hfdcan1.Init.NominalTimeSeg2 = 1;
+  hfdcan1.Init.DataPrescaler = 1;
+  hfdcan1.Init.DataSyncJumpWidth = 1;
+  hfdcan1.Init.DataTimeSeg1 = 1;
+  hfdcan1.Init.DataTimeSeg2 = 1;
+  hfdcan1.Init.StdFiltersNbr = 0;
+  hfdcan1.Init.ExtFiltersNbr = 0;
+  hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+  if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN FDCAN1_Init 2 */
+
+  /* USER CODE END FDCAN1_Init 2 */
+
+}
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x00503D58;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
@@ -389,8 +557,7 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE END USART2_Init 2 */
 
 }
-#endif
-#if 0
+
 /**
   * @brief SPI1 Initialization Function
   * @param None
@@ -584,6 +751,114 @@ void test_fatfs(void)
     f_mount(NULL, USERPath, 1);
 }
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_itracer_main_thread */
+/**
+  * @brief  Function implementing the vts_task_main thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_itracer_main_thread */
+void itracer_main_thread(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_itracer_platform_thread */
+/**
+* @brief Function implementing the vts_task_platfo thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_itracer_platform_thread */
+void itracer_platform_thread(void const * argument)
+{
+  /* USER CODE BEGIN itracer_platform_thread */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END itracer_platform_thread */
+}
+
+/* USER CODE BEGIN Header_itracer_gps_thread */
+/**
+* @brief Function implementing the vts_task_gps thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_itracer_gps_thread */
+void itracer_gps_thread(void const * argument)
+{
+  /* USER CODE BEGIN itracer_gps_thread */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END itracer_gps_thread */
+}
+
+/* USER CODE BEGIN Header_itracer_gprs_thread */
+/**
+* @brief Function implementing the vts_task_gprs thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_itracer_gprs_thread */
+void itracer_gprs_thread(void const * argument)
+{
+  /* USER CODE BEGIN itracer_gprs_thread */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END itracer_gprs_thread */
+}
+
+/* USER CODE BEGIN Header_itracer_cloud_thread */
+/**
+* @brief Function implementing the vts_task_cloud thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_itracer_cloud_thread */
+void itracer_cloud_thread(void const * argument)
+{
+  /* USER CODE BEGIN itracer_cloud_thread */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END itracer_cloud_thread */
+}
+
+/* USER CODE BEGIN Header_itracer_adc_thread */
+/**
+* @brief Function implementing the myTask06 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_itracer_adc_thread */
+void itracer_adc_thread(void const * argument)
+{
+  /* USER CODE BEGIN itracer_adc_thread */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END itracer_adc_thread */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

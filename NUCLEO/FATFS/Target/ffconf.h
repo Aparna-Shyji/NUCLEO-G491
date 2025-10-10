@@ -24,16 +24,13 @@
 /-----------------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32g4xx_hal.h"
+#include "cmsis_os.h" /* _FS_REENTRANT set to 1 and CMSIS API chosen */
 
 /*-----------------------------------------------------------------------------/
 / Function Configurations
 /-----------------------------------------------------------------------------*/
 
 #define _FS_READONLY         0      /* 0:Read/Write or 1:Read only */
-#define _USE_WRITE    1   /* 0: Disable or 1: Enable writing API functions */
-#define _USE_IOCTL    1
-
-
 /* This option switches read-only configuration. (0:Read/Write or 1:Read-only)
 /  Read-only configuration removes writing API functions, f_write(), f_sync(),
 /  f_unlink(), f_mkdir(), f_chmod(), f_rename(), f_truncate(), f_getfree()
@@ -158,7 +155,6 @@
 /----------------------------------------------------------------------------*/
 
 #define _VOLUMES    1
-
 /* Number of volumes (logical drives) to be used. */
 
 /* USER CODE BEGIN Volumes */
@@ -246,9 +242,11 @@
 /      can be opened simultaneously under file lock control. Note that the file
 /      lock control is independent of re-entrancy. */
 
-#define _FS_REENTRANT    0  /* 0:Disable or 1:Enable */
+#define _FS_REENTRANT    1  /* 0:Disable or 1:Enable */
+
+#define _USE_MUTEX       0 /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT      1000 /* Timeout period in unit of time ticks */
-#define _SYNC_t          NULL
+#define _SYNC_t          osSemaphoreId
 /* The option _FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
 /  volume is always re-entrant and volume control functions, f_mount(), f_mkfs()
@@ -266,11 +264,10 @@
 /  SemaphoreHandle_t and etc.. A header file for O/S definitions needs to be
 /  included somewhere in the scope of ff.h. */
 
-/* define the ff_malloc ff_free macros as standard malloc free */
+/* define the ff_malloc ff_free macros as FreeRTOS pvPortMalloc and vPortFree macros */
 #if !defined(ff_malloc) && !defined(ff_free)
-#include <stdlib.h>
-#define ff_malloc  malloc
-#define ff_free  free
+#define ff_malloc  pvPortMalloc
+#define ff_free  vPortFree
 #endif
 
 #endif /* _FFCONF */
