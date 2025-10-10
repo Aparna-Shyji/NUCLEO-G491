@@ -6,6 +6,7 @@
 #include "stm32g4xx_hal_uart.h"
 #include<string.h>
 #include<stdarg.h>
+#include<main.h>
 
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef hlpuart1;
@@ -14,6 +15,8 @@ extern UART_HandleTypeDef huart2;
 
 #define SERIAL_RX_BUFFER_LEN 512
 #define SERIAL_TX_BUFFER_LEN 512
+#define GPS_UART_BUFFER_SIZE 512
+#define NMEA_PARSER_BUFFER_SIZE 512
 // RX buffer
 uint8_t rx_data;
 uint8_t rx_buffer[100];
@@ -26,6 +29,9 @@ volatile uint8_t serial_rx_byte;
 char recv_buff3[SERIAL_RX_BUFFER_LEN];
 char serial_buffer[512];
 char cmd_buffer[512];
+volatile uint8_t gps_rx_byte;                  // For interrupt RX
+volatile uint16_t gps_rx_index = 0;           // RX buffer index
+char gps_rx_buffer[GPS_UART_BUFFER_SIZE];     // RX buffer for UARt
 
 
 // Define a temporary buffer size large enough for your longest debug messages
@@ -109,13 +115,13 @@ int ais140_parse_commands(char *input_buffer, int read_bytes, int context)
     // --- Example local commands (Use strcmp on the trimmed, uppercased string) ---
     if (strcmp(cmd_start, "LED ON") == 0)
     {
-        // HAL_GPIO_WritePin(GPIOC, OBD_LED_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(GPIOC, OBD_LED_Pin, GPIO_PIN_SET);
         UART_Print("LED turned ON\r\n");
         ret = 0; // Success
     }
     else if (strcmp(cmd_start, "LED OFF") == 0)
     {
-        // HAL_GPIO_WritePin(GPIOC, OBD_LED_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOC, OBD_LED_Pin, GPIO_PIN_RESET);
         UART_Print("LED turned OFF\r\n");
         ret = 0; // Success
     }
@@ -219,6 +225,35 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         // CRITICAL: Restart the interrupt to fill the same single-byte variable
         HAL_UART_Receive_IT(&huart1, &serial_rx_byte, 1); 
     }
+
+    // ===============================================
+    //           2. LPUART1 (GPS) Handler
+    // ===============================================
+    else if (huart->Instance == LPUART1)
+    {
+        // Store received byte in buffer
+        if (gps_rx_index < GPS_UART_BUFFER_SIZE - 1)
+        {
+            gps_rx_buffer[gps_rx_index++] = gps_rx_byte;
+
+            // IMMEDIATE PARSING: Call the byte-by-byte parsing function.
+            // This is the desired logic, but carries the risk of ISR delay/data loss.
+            cut_gps_data_start_to_end(gps_rx_byte);
+            
+            // Your echo (if enabled) is DANGEROUS inside the ISR.
+            // #ifdef EV_BOARD 
+            // HAL_UART_Transmit(&huart4, &gps_rx_byte, 1, HAL_MAX_DELAY);
+            // #endif
+        }
+        else
+        {
+            // Buffer overflow: reset index
+            gps_rx_index = 0;
+        }
+
+        // Re-enable RX interrupt for next byte
+        HAL_UART_Receive_IT(&hlpuart1, &gps_rx_byte, 1);
+    }
 }
 
 
@@ -282,43 +317,55 @@ void MX_USART1_UART_Init(void)
 void MX_LPUART1_UART_Init(void)
 {
 
-  /* USER CODE BEGIN LPUART1_Init 0 */
+    /* USER CODE BEGIN LPUART1_Init 0 */
 
-  /* USER CODE END LPUART1_Init 0 */
+    /* USER CODE END LPUART1_Init 0 */
 
-  /* USER CODE BEGIN LPUART1_Init 1 */
+    /* USER CODE BEGIN LPUART1_Init 1 */
 
-  /* USER CODE END LPUART1_Init 1 */
-  hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 115200;
-  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
-  hlpuart1.Init.StopBits = UART_STOPBITS_1;
-  hlpuart1.Init.Parity = UART_PARITY_NONE;
-  hlpuart1.Init.Mode = UART_MODE_TX_RX;
-  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&hlpuart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN LPUART1_Init 2 */
-
-  /* USER CODE END LPUART1_Init 2 */
-
+    /* USER CODE END LPUART1_Init 1 */
+    hlpuart1.Instance = LPUART1;
+    hlpuart1.Init.BaudRate = 115200;
+    hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
+    hlpuart1.Init.StopBits = UART_STOPBITS_1;
+    hlpuart1.Init.Parity = UART_PARITY_NONE;
+    hlpuart1.Init.Mode = UART_MODE_TX_RX;
+    hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+    hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+    hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+    if (HAL_UART_Init(&hlpuart1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    if (HAL_UARTEx_DisableFifoMode(&hlpuart1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+        UART_Print("GPS UART INIT SUCCESSFULLY");
+    // ******************************************************************
+    // ** FIX: Start the Receive Interrupt BEFORE sending data to the GPS. **
+    // ******************************************************************
+    // This tells the LPUART1 to listen for the first byte into gps_rx_byte
+    // and trigger the HAL_UART_RxCpltCallback when it arrives.
+    if (HAL_UART_Receive_IT(&hlpuart1, &gps_rx_byte, 1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    
+    // Now that the receiver is ready, send the query/configuration sentences.
+    // send_all_gps_sentences();
+    
+    /* USER CODE BEGIN LPUART1_Init 2 */
+    /* USER CODE END LPUART1_Init 2 */
 }
 void MX_USART2_UART_Init(void)
 {

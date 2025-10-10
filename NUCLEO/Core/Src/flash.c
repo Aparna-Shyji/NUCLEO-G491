@@ -470,26 +470,26 @@ void flash_driver_self_test(void)
     flash_rd_id();
     
     status_reg = flash_rd_status_reg();
-    UART_Print("FLASH SELF-TEST: Initial Status Register: 0x%02X\r\n", status_reg);
+    UART_Printf("FLASH SELF-TEST: Initial Status Register: 0x%02X\r\n", status_reg);
     
     // ----------------------------------------------------
     // 2. ERASE: Clear the dedicated test sector
     // ----------------------------------------------------
-    UART_Print("FLASH SELF-TEST: Starting Sector Erase at 0x%08lX...\r\n", (uint32_t)TEST_ADDR);
+    UART_Printf("FLASH SELF-TEST: Starting Sector Erase at 0x%08lX...\r\n", (uint32_t)TEST_ADDR);
     ais140_flash_erase_mfg_sector(); // Calls Sector Erase for sector 0
     // ais140_flash_erase_mfg_sector output will show success/failure
 
     // ----------------------------------------------------
     // 3. WRITE: Write the test pattern
     // ----------------------------------------------------
-    UART_Print("FLASH SELF-TEST: Writing %d bytes of test data...\r\n", TEST_DATA_LEN);
+    UART_Printf("FLASH SELF-TEST: Writing %d bytes of test data...\r\n", TEST_DATA_LEN);
     ais140_flash_write_data(TEST_ADDR, (uint8_t*)g_write_pattern, TEST_DATA_LEN);
     // ais140_flash_write_data output will show success/failure
 
     // ----------------------------------------------------
     // 4. READ: Read the data back
     // ----------------------------------------------------
-    UART_Print("FLASH SELF-TEST: Reading %d bytes back from 0x%08lX...\r\n", TEST_DATA_LEN, (uint32_t)TEST_ADDR);
+    UART_Printf("FLASH SELF-TEST: Reading %d bytes back from 0x%08lX...\r\n", TEST_DATA_LEN, (uint32_t)TEST_ADDR);
     ais140_flash_read_data(TEST_ADDR, read_buffer, TEST_DATA_LEN);
     
     // ----------------------------------------------------
@@ -509,7 +509,7 @@ void flash_driver_self_test(void)
         {
             if (g_write_pattern[i] != read_buffer[i])
             {
-                UART_Print("MISMATCH at offset 0x%02X: Wrote 0x%02X, Read 0x%02X\r\n", 
+                UART_Printf("MISMATCH at offset 0x%02X: Wrote 0x%02X, Read 0x%02X\r\n", 
                            i, g_write_pattern[i], read_buffer[i]);
             }
         }
@@ -547,7 +547,7 @@ void MX_SPI1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI1_Init 2 */
-
+  UART_Print("SPI INIT SUCCESS");
   /* USER CODE END SPI1_Init 2 */
 
 }
